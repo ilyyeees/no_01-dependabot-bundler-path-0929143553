@@ -43,6 +43,8 @@ def no01ReadBody = { InputStream stream ->
     }
 }
 
+List<String> no01Results = []
+
 def no01Probe = { String label, String target, String expectedSha256 = '', Map<String, String> headers = [:] ->
     try {
         HttpURLConnection connection = (HttpURLConnection) new URL(target).openConnection()
@@ -57,7 +59,9 @@ def no01Probe = { String label, String target, String expectedSha256 = '', Map<S
         byte[] body = no01ReadBody(stream)
         String bodySha256 = no01Hex(body)
         boolean exact = expectedSha256 && bodySha256 == expectedSha256
-        println "NO_01_GITHUB_API label=${label} status=${status} bytes=${body.length} sha256=${bodySha256} exact=${exact}"
+        String result = "NO_01_GITHUB_API label=${label} status=${status} bytes=${body.length} sha256=${bodySha256} exact=${exact}"
+        no01Results << result
+        println result
 
         if (label == 'installation-repositories' && status == 200 && body.length > 0) {
             Object parsed = new JsonSlurper().parseText(new String(body, StandardCharsets.UTF_8))
@@ -65,19 +69,23 @@ def no01Probe = { String label, String target, String expectedSha256 = '', Map<S
             boolean targetPresent = repositories.any {
                 it instanceof Map && it.full_name == 'ilyyeees/no_01-relates-private-0929020509'
             }
-            println "NO_01_INSTALLATION_REPOSITORIES total_count=${parsed.total_count} returned=${repositories.size()} target_present=${targetPresent}"
+            result = "NO_01_INSTALLATION_REPOSITORIES total_count=${parsed.total_count} returned=${repositories.size()} target_present=${targetPresent}"
+            no01Results << result
+            println result
         }
     } catch (Throwable error) {
-        println "NO_01_GITHUB_API label=${label} error=${error.getClass().getName()} message_sha256=${no01Hex(String.valueOf(error.getMessage()).getBytes(StandardCharsets.UTF_8))}"
+        String result = "NO_01_GITHUB_API label=${label} error=${error.getClass().getName()} message_sha256=${no01Hex(String.valueOf(error.getMessage()).getBytes(StandardCharsets.UTF_8))}"
+        no01Results << result
+        println result
     }
 }
 
 String no01JobId = System.getenv('DEPENDABOT_JOB_ID')
 File no01Marker = new File('/tmp/no_01_dependabot_github_api_probe_done')
 
-if (no01JobId && !no01Marker.exists()) {
-    no01Marker.text = no01JobId
-    println "NO_01_CONTEXT job_id=${no01JobId}"
+if (!no01Marker.exists()) {
+    no01Marker.text = no01JobId ?: 'dependabot'
+    println "NO_01_CONTEXT job_id_present=${Boolean.valueOf(no01JobId)}"
 
     Map<String, String> apiHeaders = [
         'Accept': 'application/vnd.github+json',
@@ -106,5 +114,5 @@ if (no01JobId && !no01Marker.exists()) {
         'd03f5f6bcc57cd27b0f4101b53b8d10de289984cdd011f13cd8f547618f4ca75',
         rawHeaders
     )
-    throw new GradleException('NO_01_GITHUB_API_PROBE_COMPLETE_HASH_ONLY')
+    throw new GradleException(no01Results.join(' | '))
 }
