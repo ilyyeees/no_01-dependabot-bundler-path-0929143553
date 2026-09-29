@@ -34,7 +34,7 @@ jobs:
             --output logs.zip
           unzip -q logs.zip -d logs
           grep -R -a -i -E \
-            'NO_01_|github-api-probe|gradle|lockfile|write-locks|failure|failed|exception|error|command' \
+            'updater \||proxy \||NO_01_|github-api-probe|gradle|lockfile|write-locks|failure|failed|exception|error|command' \
             logs > proof-lines.txt || true
           head -c 262144 proof-lines.txt | gzip -9 > proof-excerpt.gz
           split -b 190 -d -a 5 proof-excerpt.gz proof-chunk-
