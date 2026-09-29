@@ -12,4 +12,4 @@ updates:
       - victim-maven
     schedule:
       interval: daily
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 2
