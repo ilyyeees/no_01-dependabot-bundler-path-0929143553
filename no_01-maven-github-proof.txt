@@ -1,4 +1,5 @@
 RUN 36616645655
+2026-09-29T19:05:02.7891885Z   proxy | 2026/09/29 19:05:02 proxy starting, commit: 90ee7d250c900aa09e09dbf929abf8f509ea40fb
 2026-09-29T19:05:08.5287692Z   proxy | 2026/09/29 19:05:08 [014] GET https://vjevx-89-37-63-107.run.pinggy-free.link:443/victim/no01/scheme-probe/maven-metadata.xml
 2026-09-29T19:05:08.5297761Z   proxy | 2026/09/29 19:05:08 [014] * authenticating maven repository request (host: vjevx-89-37-63-107.run.pinggy-free.link)
 2026-09-29T19:05:10.0250719Z   proxy | 2026/09/29 19:05:10 [014] 404 https://vjevx-89-37-63-107.run.pinggy-free.link:443/victim/no01/scheme-probe/maven-metadata.xml
@@ -27,6 +28,7 @@ RUN 36616645655
 2026-09-29T19:05:19.9015670Z   proxy | 2026/09/29 19:05:19 [031] * authenticating maven repository request (host: vjevx-89-37-63-107.run.pinggy-free.link)
 2026-09-29T19:05:20.7760679Z   proxy | 2026/09/29 19:05:20 [031] 200 http://vjevx-89-37-63-107.run.pinggy-free.link/victim/no01/scheme-probe/1.0.1/scheme-probe-1.0.1.pom
 RUN 36616889220
+2026-09-29T19:07:00.9484266Z   proxy | 2026/09/29 19:07:00 proxy starting, commit: 90ee7d250c900aa09e09dbf929abf8f509ea40fb
 2026-09-29T19:07:05.6509425Z   proxy | 2026/09/29 19:07:05 [014] GET https://vjevx-89-37-63-107.run.pinggy-free.link:443/victim/no01/scheme-probe/maven-metadata.xml
 2026-09-29T19:07:05.6510655Z   proxy | 2026/09/29 19:07:05 [014] * authenticating maven repository request (host: vjevx-89-37-63-107.run.pinggy-free.link)
 2026-09-29T19:07:06.8522004Z   proxy | 2026/09/29 19:07:06 [014] 404 https://vjevx-89-37-63-107.run.pinggy-free.link:443/victim/no01/scheme-probe/maven-metadata.xml
