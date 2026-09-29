@@ -1,0 +1,37 @@
+name: no 01 read Dependabot proof
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish only controlled Dependabot proof lines
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROBE_RUN_ID: "36613951052"
+        run: |
+          set -euo pipefail
+          mkdir logs
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2026-03-10" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${PROBE_RUN_ID}/logs" \
+            --output logs.zip
+          unzip -q logs.zip -d logs
+          proof="$(grep -R -a 'NO_01_' logs | sed -E 's/^.*(NO_01_)/\1/' | head -n 20 || true)"
+          if [[ -z "$proof" ]]; then
+            proof='NO_01_LOG_MARKER_ABSENT'
+          fi
+          printf '%s\n' "$proof"
+          proof_oneline="$(printf '%s\n' "$proof" | tr '\n' ' ' | sed 's/%/%25/g; s/\r/%0D/g')"
+          printf '::notice file=.github/dependabot.yml,title=Dependabot proof::%s\n' "$proof_oneline"
