@@ -1,0 +1,22 @@
+version: 2
+registries:
+  victim-rubygems:
+    type: rubygems-server
+    url: https://cskdk-89-37-63-107.run.pinggy-free.link/victim
+    username: no_01-bundler-victim
+    password: ${{secrets.NO_01_BUNDLER_PASSWORD}}
+updates:
+  - package-ecosystem: bundler
+    directory: "/control"
+    registries:
+      - victim-rubygems
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 1
+  - package-ecosystem: bundler
+    directory: "/probe"
+    registries:
+      - victim-rubygems
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 1
