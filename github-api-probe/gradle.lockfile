@@ -1,0 +1,2 @@
+# Minimal controlled fixture. Dependabot's lockfile updater regenerates this file.
+empty=compileClasspath,runtimeClasspath

