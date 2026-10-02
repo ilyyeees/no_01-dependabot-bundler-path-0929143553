@@ -1,0 +1,57 @@
+name: no01 release asset name calibration
+
+on:
+  push:
+    branches:
+      - no01-release-asset-name
+
+permissions:
+  contents: write
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create disposable release and upload hostile names
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="no01-asset-name-${GITHUB_RUN_ID}"
+          release_json=$(gh api "repos/${GITHUB_REPOSITORY}/releases" \
+            --method POST \
+            -f "tag_name=${tag}" \
+            -f "target_commitish=${GITHUB_SHA}" \
+            -f "name=${tag}" \
+            -F draft=false \
+            -F prerelease=true)
+          release_id=$(jq -r .id <<<"${release_json}")
+          printf 'harmless calibration payload\n' > payload.txt
+
+          candidates=(
+            '..%2Fno01-posix-parent'
+            '%2Ftmp%2Fno01-posix-absolute'
+            '..%5Cno01-windows-parent'
+            'C:%5CUsers%5CPublic%5Cno01-windows-drive'
+            'no01-ads.txt:stream'
+            '..%252Fno01-double-encoded'
+          )
+
+          for encoded_name in "${candidates[@]}"; do
+            status=$(curl --silent --show-error \
+              --output response.json \
+              --write-out '%{http_code}' \
+              --request POST \
+              --header "Authorization: Bearer ${GH_TOKEN}" \
+              --header 'Accept: application/vnd.github+json' \
+              --header 'X-GitHub-Api-Version: 2022-11-28' \
+              --header 'Content-Type: application/octet-stream' \
+              --data-binary @payload.txt \
+              "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?name=${encoded_name}")
+            stored=$(jq -r '.name // .message // "no-name"' response.json | tr '\r\n' ' ')
+            printf '::notice title=asset-name calibration::input=%s status=%s stored=%s\n' "${encoded_name}" "${status}" "${stored}"
+          done
+
+          gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets" \
+            --jq '.[] | "stored=" + .name'
