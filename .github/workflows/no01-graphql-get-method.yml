@@ -1,0 +1,29 @@
+name: no01 GraphQL GET method probe
+
+on:
+  push:
+    branches:
+      - no01-graphql-get-method
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send a no-op mutation operation over GET
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          status=$(curl --silent --show-error --get \
+            --output response.json \
+            --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+            --header 'Accept: application/vnd.github+json' \
+            --data-urlencode 'query=mutation Noop { __typename }' \
+            https://api.github.com/graphql)
+          printf 'HTTP_STATUS=%s\n' "$status"
+          jq -c . response.json
+
