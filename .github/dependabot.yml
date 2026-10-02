@@ -1,0 +1,15 @@
+version: 2
+registries:
+  no01-python-victim:
+    type: python-index
+    url: https://cuddly-cycles-pick.loca.lt/victim/simple
+    username: no01-python-victim
+    password: ${{secrets.NO_01_BUNDLER_PASSWORD}}
+updates:
+  - package-ecosystem: pip
+    directory: "/python-path-probe"
+    registries:
+      - no01-python-victim
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 1

