@@ -26,4 +26,13 @@ jobs:
             https://api.github.com/graphql)
           printf 'HTTP_STATUS=%s\n' "$status"
           jq -c . response.json
-
+          if jq -e '.data.__typename == "Mutation"' response.json >/dev/null; then
+            printf 'PROBE_RESULT=GET_MUTATION_ACCEPTED\n'
+            exit 73
+          fi
+          if jq -e '.errors | type == "array" and length > 0' response.json >/dev/null; then
+            printf 'PROBE_RESULT=GET_MUTATION_REJECTED\n'
+            exit 0
+          fi
+          printf 'PROBE_RESULT=UNEXPECTED_RESPONSE\n'
+          exit 2
