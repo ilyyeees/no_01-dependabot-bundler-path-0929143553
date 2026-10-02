@@ -57,4 +57,5 @@ jobs:
             'PROOF_RESULT=ESCAPED_DESTINATION'
           } else {
             'PROOF_RESULT=CONTAINED'
+            throw 'The outside canary was not overwritten.'
           }
