@@ -26,6 +26,8 @@ jobs:
             https://api.github.com/graphql)
           printf 'HTTP_STATUS=%s\n' "$status"
           jq -c . response.json
+          compact=$(jq -c . response.json | sed 's/%/%25/g; s/\r/%0D/g; s/\n/%0A/g')
+          printf '::error title=GraphQL GET status %s::%s\n' "$status" "$compact"
           if jq -e '.data.__typename == "Mutation"' response.json >/dev/null; then
             printf 'PROBE_RESULT=GET_MUTATION_ACCEPTED\n'
             exit 73
