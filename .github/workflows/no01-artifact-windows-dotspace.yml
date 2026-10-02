@@ -1,0 +1,60 @@
+name: no01 artifact Windows dot-space probe
+
+on:
+  push:
+    branches:
+      - no01-artifact-windows-dotspace
+
+permissions:
+  contents: read
+
+jobs:
+  produce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create cross-platform canary paths
+        shell: bash
+        run: |
+          mkdir -p 'payload/.. '
+          printf 'DOTSPACE_ESCAPE_CANARY\n' > 'payload/.. /victim.txt'
+          printf 'NORMAL_ENTRY_CANARY\n' > payload/inside.txt
+          find payload -printf '%P|%y\n' | sort
+
+      - name: Upload with the supported client
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotspace-path-probe
+          path: payload
+          include-hidden-files: true
+
+  consume:
+    needs: produce
+    runs-on: windows-latest
+    steps:
+      - name: Prepare an outside victim and isolated destination
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path sandbox/out | Out-Null
+          Set-Content -LiteralPath sandbox/victim.txt -Value 'ORIGINAL_OUTSIDE_VALUE' -NoNewline
+
+      - name: Download into the isolated destination
+        uses: actions/download-artifact@v8
+        with:
+          name: dotspace-path-probe
+          path: sandbox/out
+
+      - name: Evaluate containment
+        shell: pwsh
+        run: |
+          $outside = Get-Content -LiteralPath sandbox/victim.txt -Raw
+          $inside = Get-Content -LiteralPath sandbox/out/inside.txt -Raw
+          "OUTSIDE_VALUE=$outside"
+          "INSIDE_VALUE=$inside"
+          Get-ChildItem -LiteralPath sandbox -Force -Recurse |
+            ForEach-Object { "ENTRY=$($_.FullName)" }
+
+          if ($outside -eq 'DOTSPACE_ESCAPE_CANARY') {
+            'PROOF_RESULT=ESCAPED_DESTINATION'
+          } else {
+            'PROOF_RESULT=CONTAINED'
+          }
