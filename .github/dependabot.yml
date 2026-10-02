@@ -10,6 +10,7 @@ updates:
     directory: "/python-path-probe"
     registries:
       - no01-python-victim
+    insecure-external-code-execution: allow
     schedule:
       interval: daily
     open-pull-requests-limit: 1
